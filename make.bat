@@ -1,0 +1,1 @@
+bcc -ms src\mo.c C:\borlandc\lib\wildargs.obj
