@@ -63,12 +63,12 @@ const char* ReadFile(const char* fn, long* size)
 	char* out;
 
 	FILE* f = fopen(fn, "rb");
-	
+
 	if (f == NULL)
 		return 0;
-	
+
 	fseek(f, 0, SEEK_END);
-    *size = ftell(f);
+	*size = ftell(f);
 	out = (char*)malloc(*size);
 	fseek(f, 0, SEEK_SET);
 
@@ -82,14 +82,14 @@ const char* ReadFile(const char* fn, long* size)
 long ReadFileSize(const char* fn, long size)
 {
 	FILE* f = fopen(fn, "rb");
-	
+
 	if (f == NULL)
 		return 0;
-	
+
 	fseek(f, 0, SEEK_END);
-	
+
 	size = ftell(f);
-	
+
 	fclose(f);
 
 	return size;
@@ -316,16 +316,16 @@ void MakeDataObj(const char* infn, const char* outfn, const char* segname, const
 
 	insize = ReadFileSize(infn, insize);
 
-    if (insize > 0x20000)
+	if (insize > 0x20000)
 	{
 		printf("Can't convert '%s  ' because it is over 128K in size\n", upinfn);
 		return;
 	}
 
-    if (access(infn, 0))
+	if (access(infn, 0))
 		return;
-	
-    f = fopen(outfn, "wb");
+
+	f = fopen(outfn, "wb");
 
 	d.head.type = 0x80;
 	d.head.len = 14;
@@ -448,18 +448,18 @@ void MakeDataObj(const char* infn, const char* outfn, const char* segname, const
 	Flush();
 
 #define LEDATA_LEN 1024
-	
+
 	segsize = insize;
 
 	if (segsize > 0x7fff)
 	{
 		FILE* finseg = fopen(infn, "rb");
 		inseg = (char*)malloc(0x7fff);
-		
+
 		while (segsize > 0x7fff)
 		{
 			fread(inseg, 0x7fff, 1, finseg);
-			
+
 			for (j = 0; j < 0x7fff; j += LEDATA_LEN)
 			{
 				d.head.type = 0xA0;
@@ -473,9 +473,9 @@ void MakeDataObj(const char* infn, const char* outfn, const char* segname, const
 
 			segsize -= 0x7fff;
 		}
-		
+
 		fread(inseg, segsize, 1, finseg);
-		
+
 		for (j = 0; j < segsize; j += LEDATA_LEN)
 		{
 			d.head.type = 0xA0;
@@ -486,14 +486,14 @@ void MakeDataObj(const char* infn, const char* outfn, const char* segname, const
 			CheckSum(d.buf, d.head.len);
 			Flush();
 		}
-		
+
 		fclose(finseg);
 		free((char*)inseg);
 	}
 	else
 	{
 		in = ReadFile(infn, &insize);
-		
+
 		for (j = 0; j < insize; j += LEDATA_LEN)
 		{
 			d.head.type = 0xA0;
@@ -507,7 +507,7 @@ void MakeDataObj(const char* infn, const char* outfn, const char* segname, const
 
 		free((char*)in);
 	}
-	
+
 	d.head.type = 0x8A;
 	d.head.len = 2;
 	d.buf[3] = 0;
@@ -520,7 +520,7 @@ void MakeDataObj(const char* infn, const char* outfn, const char* segname, const
 		strcpy(pubname, segname);
 		pub = "PUBLIC:";
 	}
-    else if (symname)
+	else if (symname)
 	{
 		strcpy(pubname, symname);
 		pub = "PUBLIC:";
@@ -539,7 +539,7 @@ void MakeDataObj(const char* infn, const char* outfn, const char* segname, const
 	if (insize < 100)
 		printf("%-15s %s%-16sSIZE:%ld Saved as %s\n", upinfn, pub, pubname, insize, upoutfn);
 	else
-	    printf("%-15s %s%-16sSIZE:%-10ld Saved as %s\n", upinfn, pub, pubname, insize, upoutfn);
+		printf("%-15s %s%-16sSIZE:%-10ld Saved as %s\n", upinfn, pub, pubname, insize, upoutfn);
 
 	fclose(f);
 }
@@ -589,7 +589,7 @@ void DumpData(const char* infn, const char* outfn, int skip)
 		if (i != insize - 1L)
 			fprintf(f, ",\r\n");
 	}
-	
+
 	fprintf(f, " };\r\n");
 
 	sprintf(symnameout, "%s[]", symname);
@@ -605,7 +605,7 @@ int main(int argc, char* argv[])
 	char buf[260];
 	int skip = 0;
 	int i;
-	
+
 	printf("MakeOBJ v0.8\n"
 		"\n");
 
@@ -626,14 +626,14 @@ int main(int argc, char* argv[])
 			"\n"
 			"To invoke MakeOBJ, merely type MO <filename> <options>. You may use the\n"
 			"wildcard characters in the filename to convert a bunch of files.\n");
-		
+
 		return 0;
 	}
 
 	for (i = 0; i < argc; i++)
 	{
 		strcpy(buf, RemovePathFromString(argv[i]));
-		
+
 		if (strlen(buf) > 12)
 		{
 			printf("Inputfilename %s to long max 8 Characters\n", buf);
@@ -643,14 +643,14 @@ int main(int argc, char* argv[])
 	}
 
 	if ((strcmp(argv[1], "-f") == 0) || (strcmp(argv[1], "-F") == 0) ||
-		(strcmp(argv[argc -1], "-f") == 0) || (strcmp(argv[argc - 1], "-F") == 0))
+		(strcmp(argv[argc - 1], "-f") == 0) || (strcmp(argv[argc - 1], "-F") == 0))
 	{
 		if ((strcmp(argv[argc - 1], "-f") == 0) || (strcmp(argv[argc - 1], "-F") == 0))
 		{
 			for (i = 1; i < argc - 1; i++)
 			{
 				strcpy(buf, argv[i]);
-				
+
 				strcpy(buf, RemoveExt(buf));
 				strcpy(defoutfn, buf);
 				sprintf(defoutfn, "%s.obj", buf);
@@ -672,8 +672,8 @@ int main(int argc, char* argv[])
 			}
 		}
 	}
-    else if ((strcmp(argv[1], "-x") == 0) || (strcmp(argv[1], "-X") == 0) ||
-		     (strcmp(argv[argc - 1], "-x") == 0) || (strcmp(argv[argc - 1], "-X") == 0))
+	else if ((strcmp(argv[1], "-x") == 0) || (strcmp(argv[1], "-X") == 0) ||
+		(strcmp(argv[argc - 1], "-x") == 0) || (strcmp(argv[argc - 1], "-X") == 0))
 	{
 		if ((strcmp(argv[argc - 1], "-x") == 0) || (strcmp(argv[argc - 1], "-X") == 0))
 		{
@@ -691,7 +691,7 @@ int main(int argc, char* argv[])
 		}
 	}
 	else if ((strcmp(argv[1], "-s") == 0) || (strcmp(argv[1], "-S") == 0) ||
-		     (strcmp(argv[argc - 1], "-s") == 0) || (strcmp(argv[argc - 1], "-S") == 0))
+		(strcmp(argv[argc - 1], "-s") == 0) || (strcmp(argv[argc - 1], "-S") == 0))
 	{
 		if ((strcmp(argv[argc - 1], "-s") == 0) || (strcmp(argv[argc - 1], "-S") == 0))
 		{
@@ -725,7 +725,7 @@ int main(int argc, char* argv[])
 			for (i = 1; i < argc - 1; i++)
 			{
 				strcpy(buf, argv[i]);
-				
+
 				strcpy(buf, RemoveExt(buf));
 				strcpy(defoutfn, buf);
 				sprintf(defoutfn, "%s.obj", buf);
@@ -743,7 +743,7 @@ int main(int argc, char* argv[])
 			for (i = 2; i < argc; i++)
 			{
 				strcpy(buf, argv[i]);
-				
+
 				strcpy(buf, RemoveExt(buf));
 				strcpy(defoutfn, buf);
 				sprintf(defoutfn, "%s.obj", buf);
