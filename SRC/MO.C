@@ -142,19 +142,18 @@ char* RemovePathFromString(char* p)
 
 void Extract(const char* infn)
 {
-	const char* in;
-	const char* start;
-	const char* p;
+	SegHeader head;
+	FILE* inf;
+	FILE* ouf = NULL;
 	char outfn[16];
 	char str[256];
 	char upinfn[260];
-	char* outdata;
-	long outsize;
-	long insize = 0;
 	int i;
-	SegHeader head;
-
-	outdata = NULL;
+	long pos;
+	long insize = 0;
+	long sizerec = 0;
+	char inbuf[4096];
+	const char* p;
 
 	strcpy(upinfn, infn);
 
@@ -162,27 +161,20 @@ void Extract(const char* infn)
 		upinfn[i] = toupper(upinfn[i]);
 
 	insize = ReadFileSize(infn, insize);
-
-	if (insize > 0x753B)
+	inf = fopen(infn, "rb");
+	pos = 0;
+	
+	while (pos < insize)
 	{
-		printf("Can't convert '%s  ' because it is over 29K in size\n", upinfn);
-		return;
-	}
-
-	start = in = ReadFile(infn, &insize);
-
-	if (in == NULL)
-		return;
-
-	while (in < start + insize)
-	{
-		head = *(SegHeader*)in;
+		fseek(inf, pos, SEEK_SET);
+		fread(inbuf, sizeof(head), 1, inf);
+		head = *(SegHeader*)inbuf;
 
 		switch (head.type)
 		{
 		case 0x80: /* THEADR */
-			memcpy(outfn, in + 4, in[3]);
-			outfn[in[3]] = 0;
+			fread(inbuf, head.len, 1, inf);
+			memcpy(outfn, inbuf + 1, head.len);
 			printf("Output: %s\n", outfn);
 			{
 				for (i = 0; i < 16; ++i)
@@ -193,21 +185,23 @@ void Extract(const char* infn)
 			}
 			break;
 		case 0x88: /* COMENT */
-			switch (in[3])
+			fread(inbuf, head.len, 1, inf);
+			switch (inbuf[1])
 			{
 			case 0:
-				memcpy(str, in + 5, head.len - 2);
+				memcpy(str, inbuf + 2, head.len - 2);
 				str[head.len - 3] = 0;
 				printf("Comment: %s\n", str);
 				break;
 			default:
-				printf("Unknown comment type %X @ %x ignored.\n", (unsigned char)in[3], (unsigned int)(in - start));
+				printf("Unknown comment type %X @ %x ignored.\n", (unsigned char)inbuf[3], (unsigned int)(pos));
 				break;
 			}
 			break;
 		case 0x96: /* LNAMES */
-			p = in + 3;
-			while (p < in + head.len + 2)
+			fread(inbuf, head.len, 1, inf);
+			p = inbuf;
+			while (p < inbuf + head.len - 1)
 			{
 				memcpy(str, p + 1, (unsigned char)*p);
 				str[(unsigned char)*p] = 0;
@@ -219,19 +213,17 @@ void Extract(const char* infn)
 		case 0x98: /* SEGDEF */
 		{
 			SegDef* sd;
-
-			sd = *(in + 3) ? (SegDef*)(in + 4) : (SegDef*)(in + 7);
-			printf("Segment Length: %d\n", sd->len);
-
-			outdata = (char*)malloc(sd->len);
-			outsize = sd->len;
+			fread(inbuf, head.len, 1, inf);
+			sd = *(inbuf) ? (SegDef*)(inbuf + 1) : (SegDef*)(inbuf + 4);
+			printf("Segment Length: %hu\n", sd->len);
 			break;
 		}
 		case 0x90: /* PUBDEF */
-			p = in + 5;
-			if (in[5] == 0)
+			fread(inbuf, head.len, 1, inf);
+			p = inbuf + 2;
+			if (inbuf[5] == 0)
 				p += 2;
-			while (p < in + head.len + 2)
+			while (p < inbuf + head.len - 1)
 			{
 				memcpy(str, p + 1, (unsigned char)*p);
 				str[(unsigned char)*p] = 0;
@@ -241,24 +233,31 @@ void Extract(const char* infn)
 			}
 			break;
 		case 0xA0: /* LEDATA */
-			printf("Writing data at %d (%d)\n", *(unsigned short*)(in + 4), head.len - 4);
-			memcpy(outdata + *(unsigned short*)(in + 4), in + 6, head.len - 4);
+			fseek(inf, pos + 6, SEEK_SET);
+			fread(inbuf, head.len, 1, inf);
+			fseek(inf, pos, SEEK_SET);
+			if (ouf == NULL)
+				ouf = fopen(outfn, "wb");
+
+			fwrite(inbuf, head.len - 4, 1, ouf);
+			printf("Writing data at %d (%d)\n", sizerec, head.len - 4);
+			sizerec += head.len - 4;
 			break;
 		case 0x8A: /* MODEND */
 			/* Ignore */
 			break;
 		default:
-			printf("Unknown header type %X @ %x ignored.\n", head.type, (unsigned int)(in - start));
+			printf("Unknown header type %X @ %x ignored.\n", head.type, (unsigned int)(pos));
 			break;
 		}
-
-		in += 3 + head.len;
+		
+		pos += head.len + 3;
 	}
 
-	WriteFile(outfn, outdata, outsize);
+	if (ouf != NULL)
+		fclose(ouf);
 
-	free((char*)start);
-	free(outdata);
+	fclose(inf);
 }
 
 void CheckSum(char* s, unsigned short len)
