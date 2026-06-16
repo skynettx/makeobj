@@ -240,7 +240,7 @@ void Extract(const char* infn)
 				ouf = fopen(outfn, "wb");
 
 			fwrite(inbuf, head.len - 4, 1, ouf);
-			printf("Writing data at %d (%d)\n", sizerec, head.len - 4);
+			printf("Writing data at %ld (%d)\n", sizerec, head.len - 4);
 			sizerec += head.len - 4;
 			break;
 		case 0x8A: /* MODEND */
