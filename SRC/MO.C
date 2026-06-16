@@ -40,7 +40,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdlib.h>
-
+#include <io.h>
 
 #pragma pack(1)
 typedef struct
@@ -110,7 +110,7 @@ char* RemoveExt(char* myStr)
 	if (myStr == NULL)
 		return NULL;
 
-	if ((retStr = malloc(strlen(myStr) + 1)) == NULL)
+	if ((retStr = (char*)malloc(strlen(myStr) + 1)) == NULL)
 		return NULL;
 
 	strcpy(retStr, myStr);
@@ -458,7 +458,7 @@ void MakeDataObj(const char* infn, const char* outfn, const char* segname, const
 
 		while (segsize > 0x7fff)
 		{
-			fread(inseg, 0x7fff, 1, finseg);
+			fread((void*)inseg, 0x7fff, 1, finseg);
 
 			for (j = 0; j < 0x7fff; j += LEDATA_LEN)
 			{
@@ -474,7 +474,7 @@ void MakeDataObj(const char* infn, const char* outfn, const char* segname, const
 			segsize -= 0x7fff;
 		}
 
-		fread(inseg, segsize, 1, finseg);
+		fread((void*)inseg, segsize, 1, finseg);
 
 		for (j = 0; j < segsize; j += LEDATA_LEN)
 		{
