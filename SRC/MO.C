@@ -150,7 +150,7 @@ void Extract(const char* infn)
 	char upinfn[260];
 	char* outdata;
 	long outsize;
-	long insize;
+	long insize = 0;
 	int i;
 	SegHeader head;
 
@@ -288,7 +288,7 @@ void MakeDataObj(const char* infn, const char* outfn, const char* segname, const
 	long i;
 	long j;
 	FILE* f;
-	long insize;
+	long insize = 0;
 	long segsize;
 	char pubname[260];
 	char upinfn[260];
