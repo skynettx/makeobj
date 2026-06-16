@@ -289,6 +289,7 @@ void MakeDataObj(const char* infn, const char* outfn, const char* segname, const
 	long j;
 	FILE* f;
 	long insize = 0;
+	long n = 0;
 	long segsize;
 	char pubname[260];
 	char upinfn[260];
@@ -451,27 +452,28 @@ void MakeDataObj(const char* infn, const char* outfn, const char* segname, const
 
 	segsize = insize;
 
-	if (segsize > 0x7fff)
+	if (segsize > 0x7C00)
 	{
 		FILE* finseg = fopen(infn, "rb");
-		inseg = (char*)malloc(0x7fff);
+		inseg = (char*)malloc(0x7C00);
 
-		while (segsize > 0x7fff)
+		while (segsize > 0x7C00)
 		{
-			fread((void*)inseg, 0x7fff, 1, finseg);
+			fread((void*)inseg, 0x7C00, 1, finseg);
 
-			for (j = 0; j < 0x7fff; j += LEDATA_LEN)
+			for (j = 0; j < 0x7C00; j += LEDATA_LEN)
 			{
 				d.head.type = 0xA0;
-				d.head.len = 0x7fff - j > LEDATA_LEN ? LEDATA_LEN + 4 : 0x7fff - j + 4;
+				d.head.len = 0x7C00 - j > LEDATA_LEN ? LEDATA_LEN + 4 : 0x7C00 - j + 4;
 				d.buf[3] = 1;
-				*(unsigned short*)(d.buf + 4) = j;
+				*(unsigned short*)(d.buf + 4) = n;
+				n += d.head.len - 4;
 				memcpy(&d.buf[6], &inseg[j], d.head.len - 4);
 				CheckSum(d.buf, d.head.len);
 				Flush();
 			}
 
-			segsize -= 0x7fff;
+			segsize -= 0x7C00;
 		}
 
 		fread((void*)inseg, segsize, 1, finseg);
@@ -481,7 +483,8 @@ void MakeDataObj(const char* infn, const char* outfn, const char* segname, const
 			d.head.type = 0xA0;
 			d.head.len = segsize - j > LEDATA_LEN ? LEDATA_LEN + 4 : segsize - j + 4;
 			d.buf[3] = 1;
-			*(unsigned short*)(d.buf + 4) = j;
+			*(unsigned short*)(d.buf + 4) = n;
+			n += d.head.len - 4;
 			memcpy(&d.buf[6], &inseg[j], d.head.len - 4);
 			CheckSum(d.buf, d.head.len);
 			Flush();
